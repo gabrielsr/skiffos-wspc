@@ -1,0 +1,64 @@
+#!/bin/bash
+cd /
+CMD=
+DOCKER_EXEC_ARGS=-i
+CONT_NAME=skiff_$(whoami)
+
+if [ "$1" = "-c" ]; then
+  shift
+  CMD="$@"
+fi
+
+check_container_running() {
+  if CONTAINER_IS_RUNNING=$(docker inspect -f {{.State.Running}} $CONT_NAME 2> /dev/null) && [ "$CONTAINER_IS_RUNNING" = "true" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+if ! check_container_running; then
+  echo "======================"
+  echo "Container not running."
+  if ! [ "$CONT_NAME" = "skiff_core" ]; then
+    echo "you are not core, exiting."
+    echo "======================"
+    exit 1
+  fi
+  echo "Showing setup logs now."
+  echo "======================"
+  journalctl -fu skiff-core.service &
+  LOGS_PID=$!
+  until check_container_running; do
+    sleep 1
+  done
+fi
+
+[ -t 1 ] && DOCKER_EXEC_ARGS+=" -t"
+
+# Wait for the lock file to be deleted
+# Note this will also fail if the docker container dies
+# So we can't get stuck here forever
+while eval "docker exec $DOCKER_EXEC_ARGS $CONT_NAME stat /.container_startup_in_progress" > /dev/null 2>&1
+do
+  # Wait a bit before checking again
+  sleep 0.5
+done
+
+# Check if the user exists in the container
+if eval "docker exec -i $DOCKER_EXEC_ARGS $CONT_NAME id -u $(whoami)" > /dev/null 2>&1; then
+  DOCKER_EXEC_ARGS+=" -u $(whoami)"
+  # Check the user's shell if needed
+  if [ -z "$CMD" ]; then
+    if ! CMD=$(docker exec -i $DOCKER_EXEC_ARGS $CONT_NAME /bin/sh -c "getent passwd $(whoami)" | cut -d: -f7 | xargs echo); then
+      CMD=/bin/sh
+    fi
+  fi
+fi
+
+if [ -z "$CMD" ]; then
+  CMD=/bin/sh
+fi
+
+eval "docker exec $DOCKER_EXEC_ARGS $CONT_NAME $CMD"
+

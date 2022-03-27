@@ -1,0 +1,13 @@
+[Unit]
+Description=Hardware RNG Entropy Gatherer Daemon
+DefaultDependencies=no
+After=systemd-udev-settle.service
+Before=sysinit.target shutdown.target
+Conflicts=shutdown.target
+
+[Service]
+ExecStart=/usr/sbin/rngd -f $DAEMON_ARGS
+EnvironmentFile=-/etc/default/rngd
+
+[Install]
+WantedBy=multi-user.target

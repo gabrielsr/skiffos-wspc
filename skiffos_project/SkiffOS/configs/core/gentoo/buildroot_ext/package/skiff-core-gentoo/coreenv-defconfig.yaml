@@ -1,0 +1,64 @@
+containers:
+  core:
+    # Select a image option (also update under images section):
+    image: skiffos/skiff-core-gentoo:latest
+    # Image option: upstream gentoo stage3 (minimal):
+    # image: gentoo/stage3:systemd
+    # Image option: LTO, graphite, latest compiler, O3
+    # image: skiffos/skiff-core-gentoo-lto:latest
+    # Image option: sane defaults, generic cflags, developer tools
+    entrypoint: ["/lib/systemd/systemd"]
+    # systemd: indicate this is a container
+    env: ["container=docker"]
+    stopSignal: RTMIN+3
+    tty: true
+    disableInit: true
+    workingDirectory: /
+    mounts:
+      - /dev:/dev
+      - /etc/resolv.conf:/etc/resolv.conf:ro
+      - /etc/hostname:/etc/hostname:ro
+      - /lib/modules:/lib/modules:ro
+      - /mnt:/mnt
+      - /run/udev:/run/udev
+      - /mnt/persist/skiff/core/repos/binpkgs:/var/cache/binpkgs
+      - /mnt/persist/skiff/core/repos/distfiles:/var/cache/distfiles
+      - /mnt/persist/skiff/core/repos/docker:/var/lib/docker
+      - /mnt/persist/skiff/core/repos/gentoo:/var/db/repos/gentoo
+      - /mnt/persist/skiff/core/repos/linux:/usr/src
+      - /mnt/persist/skiff/core/repos/log:/var/log
+      - /mnt/persist/skiff/core/repos/tmp:/var/tmp
+    privileged: true
+    startAfterCreate: true
+    restartPolicy: "always"
+    capAdd:
+      - ALL
+    hostIPC: true
+    hostUTS: true
+    hostNetwork: true
+    securityOpt:
+      - seccomp=unconfined
+      - apparmor=unconfined
+    tmpFs:
+      /run: rw,noexec,nosuid,size=65536k
+      /run/lock: rw,noexec,nosuid,size=65536k
+users:
+  core:
+    container: core
+    containerUser: core
+    createContainerUser: true
+    containerShell:
+      - "/bin/bash"
+    auth:
+      copyRootKeys: true
+images:
+  # See the image choices in the comment block above.
+  skiffos/skiff-core-gentoo:latest:
+    pull:
+      # images are provided for arm64, arm, amd64
+      # also an option: policy: ifbuildfails
+      policy: ifnotexists
+      # avoid docker hub rate limits
+      registry: quay.io
+    build:
+      source: /opt/skiff/coreenv/skiff-core-gentoo

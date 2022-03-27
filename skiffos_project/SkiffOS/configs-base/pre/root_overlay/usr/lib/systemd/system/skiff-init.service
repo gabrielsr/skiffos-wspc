@@ -1,0 +1,12 @@
+[Unit]
+Description=SkiffOS early-init
+DefaultDependencies=no
+Before=basic.target
+Before=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/skiff/scripts/mount-all.sh
+RemainAfterExit=true
+StandardOutput=kmsg+console
+StandardError=kmsg+console

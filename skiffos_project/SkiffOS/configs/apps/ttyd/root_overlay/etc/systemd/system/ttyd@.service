@@ -1,0 +1,11 @@
+[Unit]
+Description=ttyd on port %i
+After=network.target
+
+[Service]
+ExecStart=ttyd -p %i login
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+DefaultInstance=7681

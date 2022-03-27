@@ -1,0 +1,141 @@
+version: '3.7'
+services:
+
+  caddy:
+    depends_on:
+      - radicale
+      - homeassistant
+    image: caddy:latest
+    container_name: caddy_reverse_proxy
+    volumes:
+      - /mnt/persist/mydocker/caddy/caddy_data:/data
+      - /mnt/persist/mydocker/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - /mnt/persist/mydocker/snikket/snikket_data:/snikket:ro
+      - /mnt/persist/mydocker/caddy/logs:/var/log/caddy/
+    environment:
+      - TZ=Europe/London 
+    restart: unless-stopped
+    network_mode: host
+
+  radicale:
+    image: tomsquest/docker-radicale
+    container_name: radicale
+    ports:
+      - 127.0.0.1:5232:5232
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
+      - CHOWN
+      - KILL
+    healthcheck:
+      test: curl -f http://127.0.0.1:5232 || exit 1
+      interval: 30s
+      retries: 3
+    restart: unless-stopped
+    volumes:
+      - /mnt/persist/mydocker/radicale/data:/data
+      - /mnt/persist/mydocker/radicale/config:/config:ro
+      - /mnt/persist/mydocker/radicale/users:/etc/radicale/users
+      - /mnt/persist/mydocker/radicale/log:/var/log/radicale/log
+    environment:
+      - TZ=Europe/London
+
+  homeassistant:
+    container_name: home-assistant
+    image: homeassistant/home-assistant:stable
+    volumes:
+      - /mnt/persist/mydocker/homeassistant:/config
+    environment:
+      - TZ=Europe/London
+    restart: unless-stopped
+    network_mode: host
+
+  esphome:
+    image: esphome/esphome
+    volumes:
+      - /mnt/persist/mydocker/esphome/config:/config:rw
+    environment:
+      - TZ=Europe/London
+    network_mode: host
+    restart: unless-stopped
+   
+   
+  snikket_proxy:
+    container_name: snikket-proxy
+    image: snikket/snikket-web-proxy:beta
+    env_file: /mnt/persist/mydocker/snikket/snikket.conf
+    network_mode: host
+    volumes:
+      - /mnt/persist/mydocker/snikket/snikket_data:/snikket
+      - /mnt/persist/mydocker/snikket/acme_challenges:/var/www/html/.well-known/acme-challenge
+    restart: unless-stopped
+  snikket_certs:
+    container_name: snikket-certs
+    image: snikket/snikket-cert-manager:beta
+    env_file: /mnt/persist/mydocker/snikket/snikket.conf
+    volumes:
+      - /mnt/persist/mydocker/snikket/snikket_data:/snikket
+      - /mnt/persist/mydocker/snikket/acme_challenges:/var/www/.well-known/acme-challenge
+    restart: unless-stopped
+  snikket_portal:
+    container_name: snikket-portal
+    image: snikket/snikket-web-portal:beta
+    network_mode: host
+    env_file: /mnt/persist/mydocker/snikket/snikket.conf
+    restart: unless-stopped
+
+  snikket_server:
+    container_name: snikket
+    image: snikket/snikket-server:beta
+    network_mode: host
+    volumes:
+      - /mnt/persist/mydocker/snikket/snikket_data:/snikket
+    env_file: /mnt/persist/mydocker/snikket/snikket.conf
+    restart: unless-stopped
+   
+  samba:
+    build: .
+    image: servercontainers/samba
+    container_name: samba-server
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      WSDD2_DISABLE: 1
+      AVAHI_DISABLE: 1
+     
+      ACCOUNT_user1: "user1:1000:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX:DF56ET792A681E1A23E0F75695:[U          ]:LCT-4502WT5:"
+      UID_user1: 1020
+      GROUPS_user1: users
+
+      ACCOUNT_user2: "user2:1000:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX:29395D100D389TEB9E295A747E420:[U          ]:LCT-521D03D5:"
+      UID_user2: 1021
+      GROUPS_user2: users
+     
+      GROUP_users: 100
+
+      SAMBA_VOLUME_CONFIG_Foldername: "[Foldername Share]; path=/shares/Foldername; valid users = user1, user2; guest ok = no; force group = users; read only = no; browseable = yes"
+
+      SAMBA_VOLUME_CONFIG_media: "[media Share]; path=/shares/media; valid users = user1, user2; guest ok = no; force group = users; read only = no; browseable = yes"
+   
+    volumes:
+     
+      - /mnt/ssd1/Foldername:/shares/Foldername
+      - /mnt/ssd2/media:/shares/media
+   
+  jellyfin:
+    image: linuxserver/jellyfin:latest
+    container_name: jellyfin
+    network_mode: host
+    volumes:
+      - /mnt/persist/mydocker/jellyfin/config:/config
+      - /mnt/persist/mydocker/jellyfin/cache:/cache
+      - /mnt/ssd2/media:/media
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/London

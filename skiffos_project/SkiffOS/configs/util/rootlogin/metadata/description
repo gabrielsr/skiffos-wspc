@@ -1,0 +1,1 @@
+Enables login with root user on serial getty w/o password (insecure unless VM).

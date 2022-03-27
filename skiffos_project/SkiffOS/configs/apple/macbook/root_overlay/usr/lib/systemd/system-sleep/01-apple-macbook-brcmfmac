@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Fix WiFi freeze on hibernation or sleep.
+case "$1" in
+    pre)
+        if lsmod | grep -q brcmfmac; then
+            rmmod brcmfmac
+        fi
+        ;;
+    post)
+        modprobe brcmfmac
+        ;;
+esac
+

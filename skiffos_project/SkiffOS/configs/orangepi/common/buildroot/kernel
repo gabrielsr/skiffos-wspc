@@ -1,0 +1,5 @@
+BR2_LINUX_KERNEL_DEFCONFIG="sunxi"
+BR2_LINUX_KERNEL_DTS_SUPPORT=y
+
+# Set BR2_LINUX_KERNEL_INTREE_DTS_NAME in board-specific config.
+# Ex: "sun8i-h2-plus-orangepi-zero"

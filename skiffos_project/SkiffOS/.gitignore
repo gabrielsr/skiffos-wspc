@@ -1,0 +1,10 @@
+.config/
+tmpmount/
+*~
+buildroot-work/
+*.org
+*.org_archive
+.#*
+*.swp
+.vagrant/
+*.log

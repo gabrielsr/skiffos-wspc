@@ -1,0 +1,9 @@
+[Unit]
+Description=mounting Files from SSD
+
+[Mount]
+Where=/mnt/sdb1
+What=/dev/disk/by-label/storage1
+
+[Install]
+WantedBy=multi-user.target

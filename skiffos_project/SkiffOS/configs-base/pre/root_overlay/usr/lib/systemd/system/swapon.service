@@ -1,0 +1,8 @@
+[Unit]
+Description=Turn on swap
+Requires=skiff-init.service
+After=skiff-init.service
+
+[Service]
+Type=simple
+ExecStart=/opt/skiff/scripts/enable-swap.sh
